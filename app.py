@@ -9,17 +9,24 @@ from storage import (
     STATUS_LABELS,
     STATUSES,
     VIEWS,
+    due_state,
     find_client,
     find_project,
     find_task,
     load_data,
     next_id,
+    parse_due,
     project_progress,
     save_data,
     sort_tasks,
 )
 
 app = Flask(__name__)
+
+
+@app.context_processor
+def template_helpers():
+    return {"due_state": due_state}
 
 
 def get_client(data, client_id):
@@ -163,11 +170,17 @@ def project_detail(client_id, project_id):
 @app.route("/clients/<int:client_id>/projects/<int:project_id>/tasks/add", methods=["POST"])
 def add_task(client_id, project_id):
     text = request.form.get("text", "").strip()
+    try:
+        due = parse_due(request.form.get("due"))
+    except ValueError:
+        abort(400, description="Invalid due date")
     data = load_data()
     client = get_client(data, client_id)
     project = get_project(client, project_id)
     if text:
-        project["tasks"].append({"id": next_id(project["tasks"]), "text": text, "status": "todo"})
+        project["tasks"].append(
+            {"id": next_id(project["tasks"]), "text": text, "status": "todo", "due": due}
+        )
         save_data(data)
     return back_to_project(client_id, project_id)
 
@@ -193,6 +206,21 @@ def set_task_status(client_id, project_id, task_id):
     project = get_project(client, project_id)
     task = get_task(project, task_id)
     task["status"] = status
+    save_data(data)
+    return back_to_project(client_id, project_id)
+
+
+@app.route("/clients/<int:client_id>/projects/<int:project_id>/tasks/<int:task_id>/due", methods=["POST"])
+def set_task_due(client_id, project_id, task_id):
+    try:
+        due = parse_due(request.form.get("due"))
+    except ValueError:
+        abort(400, description="Invalid due date")
+    data = load_data()
+    client = get_client(data, client_id)
+    project = get_project(client, project_id)
+    task = get_task(project, task_id)
+    task["due"] = due
     save_data(data)
     return back_to_project(client_id, project_id)
 

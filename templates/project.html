@@ -31,6 +31,7 @@
         action="{{ url_for('add_task', client_id=client.id, project_id=project.id, view=view, sort=sort) }}"
         method="post">
     <input type="text" name="text" placeholder="What needs doing?" required autofocus>
+    <input class="due-input" type="date" name="due" aria-label="Due date (optional)">
     <button class="add-btn" type="submit">Add</button>
   </form>
 
@@ -44,8 +45,16 @@
           </div>
           {% for task in column.tasks %}
             {% set position = statuses.index(task.status) %}
+            {% set state = due_state(task) %}
             <div class="card">
               <span class="card-text">{{ task.text }}</span>
+              {% if state == 'overdue' %}<span class="pill pill--danger">Overdue</span>{% endif %}
+              <div class="card-meta">
+              <form class="due-form" action="{{ url_for('set_task_due', client_id=client.id, project_id=project.id, task_id=task.id, view=view, sort=sort) }}" method="post">
+                <input class="due-input due-input--{{ state or 'none' }}" type="date" name="due"
+                       value="{{ task.due or '' }}" aria-label="Due date for {{ task.text }}"
+                       onchange="this.form.submit()">
+              </form>
               <div class="card-actions">
                 {% if position > 0 %}
                   <form action="{{ url_for('set_task_status', client_id=client.id, project_id=project.id, task_id=task.id, view=view, sort=sort) }}" method="post">
@@ -63,6 +72,7 @@
                   <button class="card-delete" type="submit" title="Delete">&times;</button>
                 </form>
               </div>
+              </div>
             </div>
           {% else %}
             <p class="column-empty">Nothing here</p>
@@ -78,9 +88,16 @@
             <input class="checkbox" type="checkbox" onchange="this.form.submit()" {{ 'checked' if task.status == 'done' else '' }}>
           </form>
           <span class="task-text">{{ task.text }}</span>
+          {% set state = due_state(task) %}
           {% if task.status == 'doing' %}
             <span class="pill">{{ status_labels['doing'] }}</span>
           {% endif %}
+          {% if state == 'overdue' %}<span class="pill pill--danger">Overdue</span>{% endif %}
+          <form class="due-form" action="{{ url_for('set_task_due', client_id=client.id, project_id=project.id, task_id=task.id, view=view, sort=sort) }}" method="post">
+            <input class="due-input due-input--{{ state or 'none' }}" type="date" name="due"
+                   value="{{ task.due or '' }}" aria-label="Due date for {{ task.text }}"
+                   onchange="this.form.submit()">
+          </form>
           <form action="{{ url_for('delete_task', client_id=client.id, project_id=project.id, task_id=task.id, view=view, sort=sort) }}" method="post">
             <button class="delete-btn" type="submit">Delete</button>
           </form>

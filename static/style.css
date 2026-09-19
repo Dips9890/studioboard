@@ -45,7 +45,7 @@ body {
 
 .app {
   width: 100%;
-  max-width: 480px;
+  max-width: 560px;
   background: var(--card);
   border-radius: 20px;
   box-shadow: var(--shadow);
@@ -167,8 +167,9 @@ li.task:last-child { border-bottom: none; }
 
 .task-text {
   flex: 1;
+  min-width: 0;
   font-size: 0.95rem;
-  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 li.done .task-text {
@@ -332,7 +333,7 @@ ul.entity-list {
 
 .column {
   flex: 1 1 0;
-  min-width: 200px;
+  min-width: 235px;
   background: var(--surface);
   border-radius: 14px;
   padding: 12px;
@@ -365,14 +366,25 @@ ul.entity-list {
   padding: 10px 12px;
   margin-bottom: 8px;
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
 }
+
+.card-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.card-meta .card-actions { margin-left: auto; }
 
 .card-text {
   flex: 1;
+  min-width: 0;
   font-size: 0.9rem;
-  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .card-actions {
@@ -418,4 +430,39 @@ ul.entity-list {
   padding: 3px 8px;
   border-radius: 20px;
   white-space: nowrap;
+}
+
+.pill--danger {
+  color: var(--danger);
+  background: rgba(255, 107, 107, 0.14);
+}
+
+.due-form { display: flex; flex-shrink: 0; }
+
+.due-input {
+  font-family: inherit;
+  font-size: 0.78rem;
+  color: var(--muted);
+  background: transparent;
+  border: 1.5px solid transparent;
+  border-radius: 8px;
+  padding: 4px 6px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.due-input:hover { border-color: var(--border); }
+.due-input:focus { border-color: var(--accent); }
+
+.due-input--overdue { color: var(--danger); font-weight: 600; }
+.due-input--today { color: #e1a100; font-weight: 600; }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .due-input--today { color: #f5b73d; }
+}
+
+.add-form .due-input {
+  border-color: var(--border);
+  color: var(--text);
 }
