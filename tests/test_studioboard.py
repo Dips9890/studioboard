@@ -102,6 +102,84 @@ def test_ids_do_not_collide_after_deletion(client):
     assert len(ids) == len(set(ids))
 
 
+# ---------- Due dates ----------
+
+def test_task_can_be_created_with_a_due_date(client):
+    seed_project(client)
+    client.post("/clients/1/projects/1/tasks/add",
+                data={"text": "Ship it", "due": "2026-10-01"})
+    assert read(client)["clients"][0]["projects"][0]["tasks"][0]["due"] == "2026-10-01"
+
+
+def test_task_without_a_due_date_stores_none(client):
+    seed_project(client)
+    client.post("/clients/1/projects/1/tasks/add", data={"text": "Ship it", "due": ""})
+    assert read(client)["clients"][0]["projects"][0]["tasks"][0]["due"] is None
+
+
+def test_due_date_can_be_set_and_cleared(client):
+    seed_project(client)
+    client.post("/clients/1/projects/1/tasks/add", data={"text": "Ship it"})
+    client.post("/clients/1/projects/1/tasks/1/due", data={"due": "2026-12-24"})
+    assert read(client)["clients"][0]["projects"][0]["tasks"][0]["due"] == "2026-12-24"
+    client.post("/clients/1/projects/1/tasks/1/due", data={"due": ""})
+    assert read(client)["clients"][0]["projects"][0]["tasks"][0]["due"] is None
+
+
+def test_invalid_due_date_is_rejected(client):
+    seed_project(client)
+    client.post("/clients/1/projects/1/tasks/add", data={"text": "Ship it"})
+    response = client.post("/clients/1/projects/1/tasks/1/due", data={"due": "next tuesday"})
+    assert response.status_code == 400
+    assert read(client)["clients"][0]["projects"][0]["tasks"][0]["due"] is None
+
+
+@pytest.mark.parametrize(
+    "due, expected",
+    [
+        ("2026-06-01", "overdue"),
+        ("2026-06-15", "today"),
+        ("2026-07-01", "upcoming"),
+        (None, None),
+    ],
+)
+def test_due_state_classifies_deadlines(due, expected):
+    task = {"status": "todo", "due": due}
+    assert storage.due_state(task, today="2026-06-15") == expected
+
+
+def test_completed_tasks_are_never_overdue():
+    task = {"status": "done", "due": "2020-01-01"}
+    assert storage.due_state(task, today="2026-06-15") is None
+
+
+def test_sort_by_due_date_puts_undated_tasks_last():
+    tasks = [
+        {"text": "no date", "status": "todo", "due": None},
+        {"text": "later", "status": "todo", "due": "2026-12-01"},
+        {"text": "sooner", "status": "todo", "due": "2026-06-01"},
+    ]
+    assert [t["text"] for t in storage.sort_tasks(tasks, "due")] == ["sooner", "later", "no date"]
+
+
+def test_overdue_task_is_flagged_in_the_page(client):
+    seed_project(client)
+    client.post("/clients/1/projects/1/tasks/add",
+                data={"text": "Late thing", "due": "2020-01-01"})
+    assert b"Overdue" in client.get("/clients/1/projects/1").data
+
+
+def test_legacy_tasks_gain_an_empty_due_date(tmp_path, monkeypatch):
+    legacy = {"clients": [{"id": 1, "name": "A", "projects": [
+        {"id": 1, "name": "P", "tasks": [{"id": 1, "text": "old", "done": False}]}
+    ]}]}
+    data_file = tmp_path / "legacy.json"
+    data_file.write_text(json.dumps(legacy))
+    monkeypatch.setenv("STUDIOBOARD_DATA", str(data_file))
+    task = storage.load_data()["clients"][0]["projects"][0]["tasks"][0]
+    assert task["due"] is None
+
+
 # ---------- Views and sorting ----------
 
 def test_board_view_renders_status_columns(client):

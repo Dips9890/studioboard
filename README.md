@@ -15,7 +15,9 @@ checklist or as a kanban board.
 - **Client / project / task hierarchy** with breadcrumb navigation at every level
 - **Two views per project** — a checklist for quick triage, a kanban board for seeing work in flight
 - **Three task states** — To do, In progress, Done — with one-click moves between board columns
-- **Sorting** by manual order, alphabetically, or by status
+- **Due dates** — set inline on any task, with overdue shown in red and due-today in amber.
+  Completed tasks are never flagged as late
+- **Sorting** by manual order, alphabetically, by status, or by due date (undated tasks last)
 - **Shareable view state** — the active view and sort live in the URL, so any board is bookmarkable
   and the browser back button behaves correctly
 - **Progress at a glance** — completed/total counts on every project and column
@@ -97,8 +99,13 @@ means the server can render the correct page with no client-side state to synchr
 values are validated against an allowlist, so a hand-edited URL can't break the page.
 
 **Schema migrations.** Tasks originally stored a boolean `done`. Adding a kanban board required a
-three-state `status`, so `storage._migrate` upgrades old records on load. It is idempotent and runs
-on every read, which means existing data survives the change without a separate migration step.
+three-state `status`, and due dates later added an optional `due` field, so `storage._migrate`
+upgrades old records on load. It is idempotent and runs on every read, which means existing data
+survives each change without a separate migration step.
+
+**Dates are stored as ISO strings.** `YYYY-MM-DD` sorts correctly as plain text, needs no timezone
+handling for what is a calendar date rather than a moment in time, and is what `<input type="date">`
+submits natively — so no date library is needed anywhere in the stack.
 
 **Always-visible card controls.** The move and delete controls on board cards were initially
 revealed on hover. They are now always visible at reduced opacity, because hover-only affordances
@@ -117,7 +124,8 @@ These are deliberate scope decisions for a local single-user tool, not oversight
 
 ## Roadmap
 
-- [ ] Due dates, with overdue highlighting and a calendar view
+- [x] Due dates, with overdue highlighting
+- [ ] Calendar / timeline view built on due dates
 - [ ] Drag-and-drop between board columns
 - [ ] Time tracking per task for hourly billing
 - [ ] Cross-client dashboard of everything due this week
