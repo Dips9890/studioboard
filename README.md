@@ -1,5 +1,9 @@
 # StudioBoard
 
+[![tests](https://github.com/Dips9890/studioboard/actions/workflows/tests.yml/badge.svg)](https://github.com/Dips9890/studioboard/actions/workflows/tests.yml)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 A lightweight project manager for freelancers and agency founders. Work is organised the way client
 services actually runs — **client → project → task** — and every project can be viewed either as a
 checklist or as a kanban board.
@@ -35,7 +39,7 @@ checklist or as a kanban board.
 ## Getting started
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/Dips9890/studioboard.git
 cd studioboard
 python3 -m venv venv
 source venv/bin/activate        # Windows: venv\Scripts\activate
