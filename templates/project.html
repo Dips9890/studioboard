@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}{{ project.name }}{% endblock %}
+{% block app_modifier %}{{ 'app--wide' if view == 'board' else '' }}{% endblock %}
+{% block content %}
+  <header>
+    <h1>{{ project.name }}</h1>
+    {% set done_count = project.tasks | selectattr('status', 'equalto', 'done') | list | length %}
+    <span class="count">{{ done_count }}/{{ project.tasks | length }} done</span>
+  </header>
+
+  <div class="toolbar">
+    <div class="view-switch">
+      {% for option in ['list', 'board'] %}
+        <a class="view-tab {{ 'active' if view == option else '' }}"
+           href="{{ url_for('project_detail', client_id=client.id, project_id=project.id, view=option, sort=sort) }}">
+          {{ 'List' if option == 'list' else 'Board' }}
+        </a>
+      {% endfor %}
+    </div>
+    <form class="sort-form" method="get">
+      <input type="hidden" name="view" value="{{ view }}">
+      <select name="sort" onchange="this.form.submit()">
+        {% for key, label in sorts.items() %}
+          <option value="{{ key }}" {{ 'selected' if sort == key else '' }}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </form>
+  </div>
+
+  <form class="add-form"
+        action="{{ url_for('add_task', client_id=client.id, project_id=project.id, view=view, sort=sort) }}"
+        method="post">
+    <input type="text" name="text" placeholder="What needs doing?" required autofocus>
+    <button class="add-btn" type="submit">Add</button>
+  </form>
+
+  {% if view == 'board' %}
+    <div class="board">
+      {% for column in columns %}
+        <div class="column">
+          <div class="column-header">
+            <span>{{ column.label }}</span>
+            <span class="column-count">{{ column.tasks | length }}</span>
+          </div>
+          {% for task in column.tasks %}
+            {% set position = statuses.index(task.status) %}
+            <div class="card">
+              <span class="card-text">{{ task.text }}</span>
+              <div class="card-actions">
+                {% if position > 0 %}
+                  <form action="{{ url_for('set_task_status', client_id=client.id, project_id=project.id, task_id=task.id, view=view, sort=sort) }}" method="post">
+                    <input type="hidden" name="status" value="{{ statuses[position - 1] }}">
+                    <button class="move-btn" type="submit" title="Move to {{ status_labels[statuses[position - 1]] }}">&larr;</button>
+                  </form>
+                {% endif %}
+                {% if position < statuses | length - 1 %}
+                  <form action="{{ url_for('set_task_status', client_id=client.id, project_id=project.id, task_id=task.id, view=view, sort=sort) }}" method="post">
+                    <input type="hidden" name="status" value="{{ statuses[position + 1] }}">
+                    <button class="move-btn" type="submit" title="Move to {{ status_labels[statuses[position + 1]] }}">&rarr;</button>
+                  </form>
+                {% endif %}
+                <form action="{{ url_for('delete_task', client_id=client.id, project_id=project.id, task_id=task.id, view=view, sort=sort) }}" method="post">
+                  <button class="card-delete" type="submit" title="Delete">&times;</button>
+                </form>
+              </div>
+            </div>
+          {% else %}
+            <p class="column-empty">Nothing here</p>
+          {% endfor %}
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <ul class="tasks">
+      {% for task in tasks %}
+        <li class="task {{ 'done' if task.status == 'done' else '' }}">
+          <form class="checkbox-form" action="{{ url_for('toggle_task', client_id=client.id, project_id=project.id, task_id=task.id, view=view, sort=sort) }}" method="post">
+            <input class="checkbox" type="checkbox" onchange="this.form.submit()" {{ 'checked' if task.status == 'done' else '' }}>
+          </form>
+          <span class="task-text">{{ task.text }}</span>
+          {% if task.status == 'doing' %}
+            <span class="pill">{{ status_labels['doing'] }}</span>
+          {% endif %}
+          <form action="{{ url_for('delete_task', client_id=client.id, project_id=project.id, task_id=task.id, view=view, sort=sort) }}" method="post">
+            <button class="delete-btn" type="submit">Delete</button>
+          </form>
+        </li>
+      {% else %}
+        <li class="empty-state">No tasks yet — add one above ✨</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  <a class="back-link" href="{{ url_for('client_detail', client_id=client.id) }}">&larr; {{ client.name }}</a>
+{% endblock %}

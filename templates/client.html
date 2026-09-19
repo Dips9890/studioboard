@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}{{ client.name }}{% endblock %}
+{% block content %}
+  <header>
+    <h1>{{ client.name }}</h1>
+    <span class="count">{{ projects | length }} project{{ 's' if projects | length != 1 else '' }}</span>
+  </header>
+
+  <form class="add-form" action="{{ url_for('add_project', client_id=client.id) }}" method="post">
+    <input type="text" name="name" placeholder="New project name" required autofocus>
+    <button class="add-btn" type="submit">Add</button>
+  </form>
+
+  <ul class="entity-list">
+    {% for entry in projects %}
+      <li class="entity-row">
+        <a class="entity-link" href="{{ url_for('project_detail', client_id=client.id, project_id=entry.project.id) }}">
+          <span class="entity-name">{{ entry.project.name }}</span>
+          <span class="entity-meta">{{ entry.done }}/{{ entry.total }} tasks done</span>
+        </a>
+        <form action="{{ url_for('delete_project', client_id=client.id, project_id=entry.project.id) }}" method="post">
+          <button class="delete-btn" type="submit">Delete</button>
+        </form>
+      </li>
+    {% else %}
+      <li class="empty-state">No projects yet — add one above ✨</li>
+    {% endfor %}
+  </ul>
+
+  <a class="back-link" href="{{ url_for('clients') }}">&larr; All clients</a>
+{% endblock %}

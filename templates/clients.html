@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Clients{% endblock %}
+{% block content %}
+  <header>
+    <h1>Clients</h1>
+    <span class="count">{{ clients | length }} total</span>
+  </header>
+
+  <form class="add-form" action="{{ url_for('add_client') }}" method="post">
+    <input type="text" name="name" placeholder="New client name" required autofocus>
+    <button class="add-btn" type="submit">Add</button>
+  </form>
+
+  <ul class="entity-list">
+    {% for client in clients %}
+      <li class="entity-row">
+        <a class="entity-link" href="{{ url_for('client_detail', client_id=client.id) }}">
+          <span class="entity-name">{{ client.name }}</span>
+          <span class="entity-meta">{{ client.projects | length }} project{{ 's' if client.projects | length != 1 else '' }}</span>
+        </a>
+        <form action="{{ url_for('delete_client', client_id=client.id) }}" method="post">
+          <button class="delete-btn" type="submit">Delete</button>
+        </form>
+      </li>
+    {% else %}
+      <li class="empty-state">No clients yet — add one above ✨</li>
+    {% endfor %}
+  </ul>
+{% endblock %}
